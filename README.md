@@ -26,7 +26,7 @@ sudo systemctl status nginx
 
 -   브라우저 접속: http://13.211.105.248/
 -   Nginx 기본 화면 (“Welcome to Nginx”) 확인
-    ![Nginx 기본 화면](/home/ec2-user/devops-lab-ec2/images/nginx_welcome.png)
+    ![Nginx 기본 화면](./images/nginx_welcome.png)
 
 ### 4. Git 연결
 

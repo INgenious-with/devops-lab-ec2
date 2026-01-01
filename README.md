@@ -77,7 +77,7 @@ docker ps
 -   브라우저 접속: http://13.211.105.248:8080
 -   "Welcome to Nginx" 문구 확인
 
-    ![Nginx 기본 화면](./images/nginx_welcome.png)
+    ![Nginx 문구 확인](./images/nginx_welcome_8080.png)
 
 ### 3. 커스텀 Docker 이미지 빌드
 
@@ -108,7 +108,7 @@ docker run -d -p 8081:80 my-nginx
 -   브라우저 접속: http://13.211.105.248:8081
 -   "Hello from Docker!" 문구 확인
 
-    ![Nginx 기본 화면](./images/nginx_welcome.png)
+    ![Docker 문구 확인](./images/docker_8081.png)
 
 ✨ 느낀 점
 

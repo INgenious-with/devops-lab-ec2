@@ -10,7 +10,7 @@ pipeline {
         stage('Git Checkout') {
             steps {
                 echo "🔹 GitHub에서 코드 가져오기"
-                git branch: 'main', url: 'git@github.com:INgenious-with/devops-lab-ec2.git'
+                git branch: 'main', url: 'https://github.com/INgenious-with/devops-lab-ec2.git'
                 echo "✅ Git Checkout 완료"
             }
         }

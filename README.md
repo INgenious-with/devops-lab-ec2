@@ -213,7 +213,7 @@ Dockerfile을 직접 작성하며 이미지와 컨테이너의 차이를 명확�
 
 <br><br>
 
-# Chapter 4 - jenkins 설치 및 설정
+# Chapter 4 - Jenkins 설치 및 설정
 
 ### 1. JDK(Java Development Kit) 설치
 
@@ -261,17 +261,18 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 -   Install suggested plugins(추천 플러그인 설치)
     -   필수 플러그인 설치 확인(Git Plugin, GitHub Plugin, Pipeline Plugin 등)
 -   계정 생성
--   Instance Configuration(http://13.211.105.248:9090/, Jenkins가 설치된 EC2 인스턴스의 퍼블릭 IP + Jenkins 포트 번호)
+-   Instance Configuration(http://3.107.193.223:9090/, Jenkins가 설치된 EC2 인스턴스의 퍼블릭 IP + Jenkins 포트 번호)
 -   Create new job
     -   devops-lab-ec2, Pipeline
     -   GitHub proejct(연결하고자 하는 GitHub 경로, https://github.com/INgenious-with/devops-lab-ec2.git)
     -   Triggers 에서 GitHub hook trigger for GITScm polling(GitHub에서 코드가 push 될 때 자동으로 jenkins 빌드 실행)
     -   Pipleline 에서 Definition 부분 Pipeline script from SCM, SCM 부분 Git, Repositry URL 부분 GitHub 경로 입력, Branch Specifier 부분 */main으로 변경 후, Save
     -   Free Disk Space 용량 부족 시 EC2 루트 볼륨 크기 확장
-        - 인스턴스 -> 인스턴스 ID -> 하단 Storage, 볼륨 ID -> 체크 박스 클릭 후 작업, 볼륨 수정 -> 크기(GiB) 값 변경
-            - 볼륨은 확장만 가능하고, 축소가 불가하므로 주의하여야 함
           ```bash
+          # 인스턴스 -> 인스턴스 ID -> 하단 Storage, 볼륨 ID -> 체크 박스 클릭 후 작업, 볼륨 수정 -> 크기(GiB) 값 변경
+          # 볼륨은 확장만 가능하고, 축소가 불가하므로 주의하여야 함
           # 단순히 AWS EC2 콘솔에서 EBS 볼륨 크기만 늘려주는 것만으로는 OS가 바로 사용하지 못함
+          
           sudo dnf install cloud-utils-growpart -y
           sudo growpart /dev/nvme0n1 1  
           sudo xfs_growfs -d /
@@ -281,15 +282,36 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
     -   Free Swap Space 용량 부족 시 디스크 확장
           ```bash
           # Swap Space 디스크 확장
-          sudo swapoff /swapfile
-          sudo rm /swapfile
+          sudo fallocate -l 4G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
           echo '/swapfile swap swap defaults 0 0' | sudo tee -a /etc/fstab # 영구 적용
+          swapon --show
+          free -h
           sudo systemctl restart jenkins
           ```
-          
-    -   우측 상단 Jenkins 관리 -> Nod
 
-
+    -   Free Temp Space 용량 부족 시 디스크 확장
+          ```bash
+          # Temp Space 디스크 확장
+            df -h /tmp
+            sudo mount -o remount,size=4G /tmp
+            sudo sed -i '/\/tmp/s/$/ ,size=4G/' /etc/fstab
+            sudo systemctl restart jenkins
+          ```
+                    
+    -   우측 상단 Jenkins 관리 -> Nodes -> 이상 없는지 확인
+    -   Webhook 설정
+        - GitHub -> Repository -> Setttings -> Webhooks -> Add webhook -> Payload URL: http://3.107.193.223/:9090/github-webhook/, Content type: application/json -> Add webhook
+      
+    -   Jenkinsfile 생성(내용은 Jenkinsfile 파일 참고)
+          ```bash
+          cd ~/devops-lab-ec2  # 디렉터리 이동, JenkinsFile 해당 경로로 옮기기
+          git status
+          git add .
+          git commit -m "JenkinsFile 추가 및 Jenkins 빌드 확인"
+          ```
 
 
 

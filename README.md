@@ -302,6 +302,9 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
           ```
                     
     -   우측 상단 Jenkins 관리 -> Nodes -> 이상 없는지 확인
+    -   Webhook 설정
+        - GitHub -> Repository -> Setttings -> Webhooks -> Add webhook -> Payload URL: http://3.107.193.223/:9090/github-webhook/, Content type: application/json -> Add webhook
+      
     -   Jenkinsfile 생성(내용은 Jenkinsfile 파일 참고)
           ```bash
           cd ~/devops-lab-ec2  # 디렉터리 이동, JenkinsFile 해당 경로로 옮기기

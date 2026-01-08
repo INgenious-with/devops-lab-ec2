@@ -14,10 +14,12 @@
 -   키 파일은 안전한 위치에 저장
 -   인스턴스 -> 체크박스 클릭 후 연결 -> 퍼블릭 IP를 사용하여 연결
   
-### 3. 기본 패키지 업데이트
+### 3. 기본 패키지 업데이트 및 시간 동기화
 
 ```bash
 sudo dnf update -y
+sudo timedatectl set-timezone Asia/Seoul
+timedatectl # Local Time 부분 KST 확인
 ```
 
 ### 4. 웹 서버 설치 및 확인
@@ -304,16 +306,32 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
     -   우측 상단 Jenkins 관리 -> Nodes -> 이상 없는지 확인
     -   Webhook 설정
         - GitHub -> Repository -> Setttings -> Webhooks -> Add webhook -> Payload URL: http://3.107.193.223/:9090/github-webhook/, Content type: application/json -> Add webhook
-      
+    -   Jenkins 유저 docker 그룹 추가
+       
+          ```bash
+          sudo usermod -aG docker jenkins
+          sudo systemctl restart jenkins
+          ```
+          
     -   Jenkinsfile 생성(내용은 Jenkinsfile 파일 참고)
+       
           ```bash
           cd ~/devops-lab-ec2  # 디렉터리 이동, JenkinsFile 해당 경로로 옮기기
+          # 해당 경로에 index.html 파일 내용 수정
           git status
           git add .
-          git commit -m "JenkinsFile 추가 및 Jenkins 빌드 확인"
+          git commit -m "Push 시, Jenkins 자동 build 확인"
           ```
+    -   푸쉬 시 Jenkins가 자동으로 빌드 수행 확인
+        ![Jenkins build 인](./images/jenkinsbuild.png)
 
+✨ 느낀 점
 
+Jenkins 설치와 초기 설정을 직접 진행하며, 빌드 자동화 환경에서 발생할 수 있는 문제를 확인하고 해결하는 경험을 얻을 수 있었음
+
+AWS에서 포트, 디스크, 메모리, 권한 등을 조정하며, 클라우드 서비스 운영에 필요한 세밀한 시스템 관리 능력을 체감할 수 있었음
+
+GitHub 연동과 Pipeline 구성으로 코드 변경 시 자동으로 빌드되는 흐름을 확인하며, CI(Continuous Integration) 역할과 중요성을 이해할 수 있었음
 
 
 

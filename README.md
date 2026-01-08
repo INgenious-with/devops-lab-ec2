@@ -213,7 +213,7 @@ Dockerfile을 직접 작성하며 이미지와 컨테이너의 차이를 명확�
 
 <br><br>
 
-# Chapter 4 - jenkins 설치 및 설정
+# Chapter 4 - Jenkins 설치 및 설정
 
 ### 1. JDK(Java Development Kit) 설치
 
@@ -268,10 +268,11 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
     -   Triggers 에서 GitHub hook trigger for GITScm polling(GitHub에서 코드가 push 될 때 자동으로 jenkins 빌드 실행)
     -   Pipleline 에서 Definition 부분 Pipeline script from SCM, SCM 부분 Git, Repositry URL 부분 GitHub 경로 입력, Branch Specifier 부분 */main으로 변경 후, Save
     -   Free Disk Space 용량 부족 시 EC2 루트 볼륨 크기 확장
-        - 인스턴스 -> 인스턴스 ID -> 하단 Storage, 볼륨 ID -> 체크 박스 클릭 후 작업, 볼륨 수정 -> 크기(GiB) 값 변경
-            - 볼륨은 확장만 가능하고, 축소가 불가하므로 주의하여야 함
           ```bash
+          # 인스턴스 -> 인스턴스 ID -> 하단 Storage, 볼륨 ID -> 체크 박스 클릭 후 작업, 볼륨 수정 -> 크기(GiB) 값 변경
+          # 볼륨은 확장만 가능하고, 축소가 불가하므로 주의하여야 함
           # 단순히 AWS EC2 콘솔에서 EBS 볼륨 크기만 늘려주는 것만으로는 OS가 바로 사용하지 못함
+          
           sudo dnf install cloud-utils-growpart -y
           sudo growpart /dev/nvme0n1 1  
           sudo xfs_growfs -d /

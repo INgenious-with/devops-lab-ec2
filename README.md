@@ -88,11 +88,9 @@ git push origin main
 
 ✨ 느낀 점
 
-AWS EC2를 직접 생성하고 Nginx를 띄워보며,
-클라우드에서 서버가 구성되고 노출되는 과정을 직접 확인할 수 있었음
+AWS EC2를 직접 생성하고 Nginx를 띄워보며, 클라우드에서 서버가 구성되고 노출되는 과정을 직접 확인할 수 있었음
 
-보안그룹 설정을 통해 접근 제어의 중요성을 다시금 느꼈고,
-인프라 관리의 기본 원리를 실제로 적용해볼 수 있었음
+보안그룹 설정을 통해 접근 제어의 중요성을 다시금 느꼈고, 인프라 관리의 기본 원리를 실제로 적용해볼 수 있었음
 
 <br><br>
 
@@ -124,14 +122,14 @@ AWS EC2를 직접 생성하고 Nginx를 띄워보며,
 
 ### 2. FileZilla 연결
 
--   사이트 관리자 추가
+-   사이트 관리자 및 연결 확인
     -   파일 -> 사이트 관리자 -> 새 사이트 -> 이름: devops-lab-ec2, 프로토콜: SFTP, 호스트: 3.107.193.223, 포트: 22,<br>로그온 유형: 키 파일, 사용자: ec2-user, 키 파일: injin-key.ppk 불러오기
       
         ![FileZilla 화면](./images/fileZilla.png)
 
--   FileZilla 연결 확인
+    -   FileZilla 연결 확인
 
-    ![FileZilla 화면](./images/fileZillaSuccess.png)
+        ![FileZilla 화면](./images/fileZillaSuccess.png)
         
     
 ✨ 느낀 점
@@ -257,6 +255,7 @@ sudo systemctl start jenkins
     ![Jenkins 초기 화면](./images/jenkinsFirst.png)
 
 -   비밀번호 확인
+
 ```bash
 sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 ```
@@ -323,6 +322,7 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
           git commit -m "Push 시, Jenkins 자동 build 확인"
           ```
     -   푸쉬 시 Jenkins가 자동으로 빌드 수행 확인
+       
         ![Jenkins build 인](./images/jenkinsbuild.png)
 
 ✨ 느낀 점
@@ -332,16 +332,3 @@ Jenkins 설치와 초기 설정을 직접 진행하며, 빌드 자동화 환경�
 AWS에서 포트, 디스크, 메모리, 권한 등을 조정하며, 클라우드 서비스 운영에 필요한 세밀한 시스템 관리 능력을 체감할 수 있었음
 
 GitHub 연동과 Pipeline 구성으로 코드 변경 시 자동으로 빌드되는 흐름을 확인하며, CI(Continuous Integration) 역할과 중요성을 이해할 수 있었음
-
-
-
-
-
-
-
-
-
-
-
-
-

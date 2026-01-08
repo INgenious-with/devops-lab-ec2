@@ -261,7 +261,7 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 -   Install suggested plugins(추천 플러그인 설치)
     -   필수 플러그인 설치 확인(Git Plugin, GitHub Plugin, Pipeline Plugin 등)
 -   계정 생성
--   Instance Configuration(http://13.211.105.248:9090/, Jenkins가 설치된 EC2 인스턴스의 퍼블릭 IP + Jenkins 포트 번호)
+-   Instance Configuration(http://3.107.193.223:9090/, Jenkins가 설치된 EC2 인스턴스의 퍼블릭 IP + Jenkins 포트 번호)
 -   Create new job
     -   devops-lab-ec2, Pipeline
     -   GitHub proejct(연결하고자 하는 GitHub 경로, https://github.com/INgenious-with/devops-lab-ec2.git)
@@ -281,15 +281,33 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
     -   Free Swap Space 용량 부족 시 디스크 확장
           ```bash
           # Swap Space 디스크 확장
-          sudo swapoff /swapfile
-          sudo rm /swapfile
+          sudo fallocate -l 4G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
           echo '/swapfile swap swap defaults 0 0' | sudo tee -a /etc/fstab # 영구 적용
+          swapon --show
+          free -h
           sudo systemctl restart jenkins
           ```
-          
-    -   우측 상단 Jenkins 관리 -> Nod
 
-
+    -   Free Temp Space 용량 부족 시 디스크 확장
+          ```bash
+          # Temp Space 디스크 확장
+            df -h /tmp
+            sudo mount -o remount,size=4G /tmp
+            sudo sed -i '/\/tmp/s/$/ ,size=4G/' /etc/fstab
+            sudo systemctl restart jenkins
+          ```
+                    
+    -   우측 상단 Jenkins 관리 -> Nodes -> 이상 없는지 확인
+    -   Jenkinsfile 생성(내용은 Jenkinsfile 파일 참고)
+          ```bash
+          cd ~/devops-lab-ec2  # 디렉터리 이동, JenkinsFile 해당 경로로 옮기기
+          git status
+          git add .
+          git commit -m "JenkinsFile 추가 및 Jenkins 빌드 확인"
+          ```
 
 
 

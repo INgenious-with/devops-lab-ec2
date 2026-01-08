@@ -24,15 +24,15 @@ sudo dnf update -y
 
 ```bash
 sudo dnf install nginx -y
-sudo systemctl enable nginx
 sudo systemctl start nginx
+sudo systemctl enable nginx
 sudo systemctl status nginx
 ```
 
 -   브라우저 접속: http://3.107.193.223/
 -   Nginx 기본 화면 ("Welcome to Nginx") 확인
 
-    ![Nginx 기본 화면](./images/nginx_welcome.png)
+    ![Nginx 기본 화면](./images/nginxMain.png)
 
 ### 5. Git 연결
 
@@ -112,7 +112,7 @@ AWS EC2를 직접 생성하고 Nginx를 띄워보며,
     
         ![Credentials 화면](./images/auth.png)
     
-    - Session -> Host Name(or IP address): 13.211.105.248(퍼블릭 IP), Port: 22, Saved Sessions: devops-lab-ec2 -> Save -> Open
+    - Session -> Host Name(or IP address): 3.107.193.223(퍼블릭 IP), Port: 22, Saved Sessions: devops-lab-ec2 -> Save -> Open
     
         ![Session 화면](./images/session.png)
     
@@ -123,7 +123,7 @@ AWS EC2를 직접 생성하고 Nginx를 띄워보며,
 ### 2. FileZilla 연결
 
 -   사이트 관리자 추가
-    -   파일 -> 사이트 관리자 -> 새 사이트 -> 이름: devops-lab-ec2, 프로토콜: SFTP, 호스트: 13.211.105.248, 포트: 22,<br>로그온 유형: 키 파일, 사용자: ec2-user, 키 파일: injin-key.ppk 불러오기
+    -   파일 -> 사이트 관리자 -> 새 사이트 -> 이름: devops-lab-ec2, 프로토콜: SFTP, 호스트: 3.107.193.223, 포트: 22,<br>로그온 유형: 키 파일, 사용자: ec2-user, 키 파일: injin-key.ppk 불러오기
       
         ![FileZilla 화면](./images/fileZilla.png)
 
@@ -154,9 +154,8 @@ sudo dnf install docker -y
 sudo systemctl start docker
 sudo systemctl enable docker
 sudo usermod -aG docker ec2-user
+newgrop docker
 ```
-
--   그룹 반영을 위해 로그아웃 후 재접속 또는 newgrp docker
    
 ### 2. 보안그룹 포트 추가(8080)
 
@@ -172,7 +171,7 @@ docker ps
 -   브라우저 접속: http://13.211.105.248:8080
 -   "Welcome to Nginx" 문구 확인
 
-    ![Nginx 문구 확인](./images/nginx_welcome_8080.png)
+    ![Nginx 문구 확인](./images/nginxMain8080.png)
 
 ### 4. 커스텀 Docker 이미지 빌드
 
@@ -200,10 +199,10 @@ docker build -t my-nginx .
 docker run -d -p 8081:80 my-nginx
 ```
 
--   브라우저 접속: http://13.211.105.248:8081
+-   브라우저 접속: http://3.107.193.223:8081
 -   "Hello from Docker!" 문구 확인
 
-    ![Docker 문구 확인](./images/docker_8081.png)
+    ![Docker 문구 확인](./images/docker.png)
 
 ✨ 느낀 점
 
@@ -220,7 +219,7 @@ Dockerfile을 직접 작성하며 이미지와 컨테이너의 차이를 명확�
 
 ```bash
 sudo dnf install java-17-amazon-corretto -y
-sudo java -version
+sudo java -version # 설치 확인
 ```
 
 -   Jenkins는 Java로 개발된 애플리케이션이므로, 실행을 위해서는 JDK가 선행 설치되어야 함(Amazon Linux 2023은 JDK 17 이상 필수)
@@ -230,9 +229,7 @@ sudo java -version
 ```bash
 sudo wget -O /etc/yum.repos.d/jenkins.repo \
 https://pkg.jenkins.io/redhat-stable/jenkins.repo
-
 sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
-
 sudo dnf install jenkins -y
 ```
 
@@ -253,7 +250,7 @@ sudo systemctl start jenkins
 ```
 
 -   Amazon Linux에는 기본적으로 Jenkins 패키지가 포함되어 있지 않기 때문에 Jenkins 공식 저장소(repo) 를 직접 등록해야 함
--   브라우저 접속: http://13.211.105.248:9090
+-   브라우저 접속: http://3.107.193.223:9090
 
     ![Jenkins 초기 화면](./images/jenkinsFirst.png)
 
@@ -266,20 +263,21 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 -   계정 생성
 -   Instance Configuration(http://13.211.105.248:9090/, Jenkins가 설치된 EC2 인스턴스의 퍼블릭 IP + Jenkins 포트 번호)
 -   Create new job
-    -   devops-lab-ec2, Pipeline 선택
-    -   GitHub proejct 클릭(연결하고자 하는 GitHub 경로, https://github.com/INgenious-with/devops-lab-ec2.git)
-    -   Triggers 에서 GitHub hook trigger for GITScm polling 클릭(GitHub에서 코드가 push 될 때 자동으로 jenkins 빌드 실행)
-    -   Pipleline 에서 Definition 부분 Pipeline script from SCM 선택, SCM 부분 Git 선택, Repositry URL 부분 GitHub 경로 입력, Branch Specifier 부분 */main으로 변경 후, Save
+    -   devops-lab-ec2, Pipeline
+    -   GitHub proejct(연결하고자 하는 GitHub 경로, https://github.com/INgenious-with/devops-lab-ec2.git)
+    -   Triggers 에서 GitHub hook trigger for GITScm polling(GitHub에서 코드가 push 될 때 자동으로 jenkins 빌드 실행)
+    -   Pipleline 에서 Definition 부분 Pipeline script from SCM, SCM 부분 Git, Repositry URL 부분 GitHub 경로 입력, Branch Specifier 부분 */main으로 변경 후, Save
     -   Free Disk Space 용량 부족 시 EC2 루트 볼륨 크기 확장
-        - 인스턴스 -> 인스턴스 ID 클릭 -> 하단 Storage, 볼륨 ID 클릭 -> 체크 박스 클릭 후 작업, 볼륨 수정 클릭 ->
-        - # 볼륨은 확장만 가능하고, 축소가 불가하므로 주
+        - 인스턴스 -> 인스턴스 ID -> 하단 Storage, 볼륨 ID -> 체크 박스 클릭 후 작업, 볼륨 수정 -> 크기(GiB) 값 변경
+            - 볼륨은 확장만 가능하고, 축소가 불가하므로 주의하여야 함
           ```bash
-          # Swap Space
-          sudo swapoff /swapfile
-          sudo rm /swapfile
-          echo '/swapfile swap swap defaults 0 0' | sudo tee -a /etc/fstab # 영구 적용
-          sudo systemctl restart jenkins
+          # 단순히 AWS EC2 콘솔에서 EBS 볼륨 크기만 늘려주는 것만으로는 OS가 바로 사용하지 못함
+          sudo dnf install cloud-utils-growpart -y
+          sudo growpart /dev/nvme0n1 1  
+          sudo xfs_growfs -d /
+          df -h # 적용 확인
           ```
+          
     -   Free Swap Space 용량 부족 시 디스크 확장
           ```bash
           # Swap Space 디스크 확장
@@ -288,6 +286,7 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
           echo '/swapfile swap swap defaults 0 0' | sudo tee -a /etc/fstab # 영구 적용
           sudo systemctl restart jenkins
           ```
+          
     -   우측 상단 Jenkins 관리 -> Nod
 
 

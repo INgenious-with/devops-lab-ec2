@@ -37,12 +37,13 @@ pipeline {
                 echo "🔹 기존 Docker 컨테이너 중지 및 삭제"
                 script {
                     try {
-                        // 기존 컨테이너가 실행 중이면 중지하고 삭제
+                        // 기존 컨테이너가 실행 중이면 강제로 종료하고 삭제
                         sh '''
-                        if [ $(docker ps -q -f name=$CONTAINER_NAME) ]; then
-                            docker stop $CONTAINER_NAME
-                            docker rm $CONTAINER_NAME
-                        fi
+             	   	if [ $(docker ps -q -f name=$CONTAINER_NAME) ]; then
+                    		docker stop $CONTAINER_NAME || true  # 컨테이너가 멈추지 않으면
+                    		docker rm $CONTAINER_NAME || true  # 컨테이너가 삭제되지 않으면
+                    		docker kill $CONTAINER_NAME || true # 강제로 종료
+                	fi
                         '''
                         echo "✅ 기존 컨테이너 중지 및 삭제 완료"
                     } catch (err) {

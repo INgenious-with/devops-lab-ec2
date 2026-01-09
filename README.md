@@ -323,7 +323,7 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
           ```
     -   푸쉬 시 Jenkins가 자동으로 빌드 수행 확인
        
-        ![Jenkins build 인](./images/jenkinsbuild.png)
+        ![Jenkins build 확인인](./images/jenkinsbuild.png)
 
 ✨ 느낀 점
 

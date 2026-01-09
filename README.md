@@ -68,16 +68,7 @@ git remote add origin git@github.com:INgenious-with/devops-lab-ec2.git
 ssh -T git@github.com # yes 입력 후 정상 메시지 확인
 git remote -v # 정상 확인
 
-echo '<!DOCTYPE html>
-<html>
-<head>
-  <title>DevOps Lab EC2</title>
-</head>
-<body>
-  <h1>Welcome to DevOps Lab EC2!</h1>
-</body>
-</html>' > index.html
-
+echo '<h1>Welcome to DevOps Lab EC2!</h1>' > check.html
 git add .
 git commit -m "commit check"
 git branch -M main
@@ -256,20 +247,21 @@ sudo systemctl start jenkins
 ```bash
 sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 ```
+
 -   Install suggested plugins(추천 플러그인 설치)
     -   필수 플러그인 설치 확인(Git Plugin, GitHub Plugin, Pipeline Plugin 등)
 -   계정 생성
--   Instance Configuration(http://3.107.193.223:9090/, Jenkins가 설치된 EC2 인스턴스의 퍼블릭 IP + Jenkins 포트 번호)
+-   Instance Configuration(http://3.107.193.223:9090/ -> Jenkins가 설치된 EC2 인스턴스의 퍼블릭 IP + Jenkins 포트 번호)
 -   Create new job
     -   devops-lab-ec2, Pipeline
     -   GitHub proejct(연결하고자 하는 GitHub 경로, https://github.com/INgenious-with/devops-lab-ec2.git)
     -   Triggers 에서 GitHub hook trigger for GITScm polling(GitHub에서 코드가 push 될 때 자동으로 jenkins 빌드 실행)
-    -   Pipeline 에서 Definition 부분 Pipeline script from SCM, SCM 부분 Git, Repositry URL 부분 GitHub 경로 입력, Branch Specifier 부분 */main으로 변경 후, Save
+    -   Pipeline 에서 Definition 부분 Pipeline script from SCM, SCM 부분 Git, Repositry URL 부분 GitHub 경로 입력, Branch Specifier 부분 */main으로 변경, Save
     -   Free Disk Space 용량 부족 시 EC2 루트 볼륨 크기 확장
           ```bash
           # 인스턴스 -> 인스턴스 ID -> 하단 Storage, 볼륨 ID -> 체크 박스 클릭 후 작업, 볼륨 수정 -> 크기(GiB) 값 변경
           # 볼륨은 확장만 가능하고, 축소가 불가하므로 주의하여야 함
-          # 단순히 AWS EC2 콘솔에서 EBS 볼륨 크기만 늘려주는 것만으로는 OS가 바로 사용하지 못함
+          # 단순히 AWS EC2 콘솔에서 EBS 볼륨 크기만 늘려주는 것만으로는 OS가 바로 사용하지 못하여 아래 명령어 필수
           
           sudo dnf install cloud-utils-growpart -y
           sudo growpart /dev/nvme0n1 1  
@@ -509,7 +501,7 @@ pipeline {
 
 ### 2. 빌드 결과 확인
 
--   푸시 후 Docker 이미지가 자동으로 빌드되고, 컨테이너가 재시작되는지 확인하기
+-   푸시 후 Docker 이미지가 자동으로 빌드되고, 컨테이너가 재시작되는지 확인
    
     ![푸쉬 전 Docker에서 확인한 index.html](./images/dockerfirst.png)
    
@@ -519,7 +511,7 @@ pipeline {
 
 ✨ 느낀 점
 
-Jenkinsfile을 수정하여 Docker 자동 빌드 및 재시작 설정을 진행하며, 빌드 자동화에서 발생할 수 있는 문제를 해결하는 경험을 얻을 수 있었음
+Jenkinsfile을 수정하여 Docker 자동 빌드 및 재시작 설정을 진행하며, 빌드 자동화에서 발생할 수 있는 문제를 해결하는 역량을 키울 수 있었음
 
 기존 컨테이너 중지 및 삭제 과정을 반복하면서, Jenkins와 Docker의 연동을 좀 더 깊이 이해할 수 있었음
 
@@ -533,11 +525,12 @@ CI/CD 파이프라인 설정을 통해 코드 변경 시 자동으로 빌드되�
 
 와이드큐브에서 쌓은 실무 경험을 바탕으로, 클라우드 환경에서 DevOps 기술을 확장할 수 있는 중요한 방향성을 파악할 수 있었습니다.
 
-AWS EC2 환경 구축부터 Nginx 설치, GitHub와의 연동, Docker와 Jenkins를 활용한 자동화 파이프라인 설정까지, 실습을 통해 클라우드 환경에서 시스템 구축과 관리에 필요한 핵심 기술을 체득할 수 있었습니다.
+AWS EC2 환경 구축부터 Nginx 설치, GitHub와의 연동, Docker와 Jenkins를 활용한 자동화 파이프라인 설정까지, 클라우드 환경에서 시스템 구축과 관리에 필요한 핵심 기술을 체득할 수 있었습니다.
 
 가장 인상 깊었던 점은 Docker와 Jenkins를 활용한 자동화된 빌드, 배포 및 환경 구축 과정이었습니다. 실무에서 중요한 기술들을 실제로 적용해본 경험은 큰 강점으로 작용할 것이라 생각합니다.
 
-Jenkins와 Docker를 연동한 CI/CD 파이프라인 구축을 통해 자동화와 효율성 증대의 중요성을 실감하며, 기존의 수동적 관리 방식을 넘어 자동화된 환경으로의 전환이 실무에서 얼마나 큰 도움이 되는지를 직접 확인할 수 있었습니다.
+이번 실습을 통해 얻은 경험은 실무에서 클라우드 환경과 자동화 도구를 효과적으로 활용하는 데 큰 도움이 되었습니다.
 
-이번 실습을 통해 얻은 경험은 실무에서 클라우드 환경과 자동화 도구를 효과적으로 활용하는 데 큰 도움이 될 뿐만 아니라, 수동적인 업무 처리에서 자동화된 시스템으로의 전환이 가져오는 실질적인 이점을 직접 체감하게 되었습니다.
+뿐만 아니라, 기존의 수동적 관리 방식을 넘어 자동화된 환경으로의 전환이 실무에서 얼마나 큰 도움이 되는지를 직접 확인할 수 있었습니다.
 
+<br><br>

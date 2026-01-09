@@ -43,7 +43,7 @@ pipeline {
                             CONTAINER_ID=$(docker ps -q -f "name=$CONTAINER_NAME")
                             if [ ! -z "$CONTAINER_ID" ]; then
                                 # 실제 컨테이너 이름을 확인
-                                CONTAINER_NAME=$(docker inspect --format '{{.Name}}' $CONTAINER_ID | sed 's/\///g')
+                                CONTAINER_NAME=$(docker inspect --format '{{.Name}}' $CONTAINER_ID | sed "s/\///g")
                                 echo "기존 컨테이너 $CONTAINER_NAME 중지 및 삭제 중..."
                                 docker stop $CONTAINER_NAME || true  # 실행 중인 컨테이너 종료
                                 docker rm $CONTAINER_NAME || true  # 컨테이너 삭제

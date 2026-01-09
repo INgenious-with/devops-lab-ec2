@@ -4,6 +4,8 @@ pipeline {
     environment {
         IMAGE_NAME = "devops-lab-ec2"
         IMAGE_TAG  = "latest"
+        CONTAINER_NAME = "my-nginx-container"
+        PORT = "8081"
     }
 
     stages {
@@ -30,16 +32,37 @@ pipeline {
             }
         }
 
-        stage('Run Container (Test)') {
+        stage('Stop and Remove Old Container') {
             steps {
-                echo "🔹 Docker 컨테이너 실행 및 테스트"
+                echo "🔹 기존 Docker 컨테이너 중지 및 삭제"
                 script {
                     try {
-                        sh 'docker run --rm $IMAGE_NAME:$IMAGE_TAG echo "컨테이너 테스트 성공!"'
-                        echo "✅ Docker 컨테이너 테스트 성공"
+                        // 기존 컨테이너가 실행 중이면 중지하고 삭제
+                        sh '''
+                        if [ $(docker ps -q -f name=$CONTAINER_NAME) ]; then
+                            docker stop $CONTAINER_NAME
+                            docker rm $CONTAINER_NAME
+                        fi
+                        '''
+                        echo "✅ 기존 컨테이너 중지 및 삭제 완료"
                     } catch (err) {
-                        echo "❌ Docker 컨테이너 테스트 실패"
-                        error("Test failed")
+                        echo "❌ 기존 컨테이너 중지 및 삭제 실패"
+                        error("Failed to stop and remove old container")
+                    }
+                }
+            }
+        }
+
+        stage('Run New Container') {
+            steps {
+                echo "🔹 새 Docker 컨테이너 실행"
+                script {
+                    try {
+                        sh 'docker run -d --name $CONTAINER_NAME -p $PORT:80 $IMAGE_NAME:$IMAGE_TAG'
+                        echo "✅ 새 Docker 컨테이너 실행 성공"
+                    } catch (err) {
+                        echo "❌ 새 Docker 컨테이너 실행 실패"
+                        error("Failed to run new container")
                     }
                 }
             }

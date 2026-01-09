@@ -196,8 +196,7 @@ docker run -d -p 8081:80 my-nginx
 
 Dockerfile을 직접 작성하며 이미지와 컨테이너의 차이를 명확히 이해할 수 있었음
 
-기존 서버 설정 과정을 단 몇 줄의 코드로 재현할 수 있다는 점이 인상적이었고,
-‘환경을 코드로 관리한다’는 DevOps 개념을 직접 체감할 수 있었음
+기존 서버 설정을 단 몇 줄의 코드로 재현할 수 있다는 점이 인상적이었고, ‘환경을 코드로 관리한다’는 DevOps 개념을 직접 체감할 수 있었음
 
 <br><br>
 
@@ -293,7 +292,7 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
                     
     -   우측 상단 Jenkins 관리 -> Nodes -> 이상 없는지 확인
     -   Webhook 설정
-        - GitHub -> Repository -> Setttings -> Webhooks -> Add webhook -> Payload URL: http://3.107.193.223/:9090/github-webhook/, Content type: application/json -> Add webhook
+        - GitHub -> Repository -> Settings -> Webhooks -> Add webhook -> Payload URL: http://3.107.193.223/:9090/github-webhook/, Content type: application/json -> Add webhook
     -   Jenkins 유저 docker 그룹 추가
        
           ```bash
@@ -502,10 +501,15 @@ pipeline {
 ### 2. 빌드 결과 확인
 
 -   푸시 후 Docker 이미지가 자동으로 빌드되고, 컨테이너가 재시작되는지 확인
-   
+    -   푸쉬 전 Docker에서 확인한 index.html
+      
     ![푸쉬 전 Docker에서 확인한 index.html](./images/dockerfirst.png)
+
+    -   Jenkins 빌드 진행 상태 확인
    
     ![Jenkins 빌드 진행 상태 확인](./images/jenkinspush.png)
+
+    -   푸쉬 후 Docker에서 확인한 index.html
 
     ![푸쉬 후 Docker에서 확인한 index.html](./images/dockersecond.png)
 

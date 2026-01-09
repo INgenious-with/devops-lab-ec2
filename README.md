@@ -267,7 +267,7 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
     -   devops-lab-ec2, Pipeline
     -   GitHub proejct(연결하고자 하는 GitHub 경로, https://github.com/INgenious-with/devops-lab-ec2.git)
     -   Triggers 에서 GitHub hook trigger for GITScm polling(GitHub에서 코드가 push 될 때 자동으로 jenkins 빌드 실행)
-    -   Pipleline 에서 Definition 부분 Pipeline script from SCM, SCM 부분 Git, Repositry URL 부분 GitHub 경로 입력, Branch Specifier 부분 */main으로 변경 후, Save
+    -   Pipeline 에서 Definition 부분 Pipeline script from SCM, SCM 부분 Git, Repositry URL 부분 GitHub 경로 입력, Branch Specifier 부분 */main으로 변경 후, Save
     -   Free Disk Space 용량 부족 시 EC2 루트 볼륨 크기 확장
           ```bash
           # 인스턴스 -> 인스턴스 ID -> 하단 Storage, 볼륨 ID -> 체크 박스 클릭 후 작업, 볼륨 수정 -> 크기(GiB) 값 변경
@@ -316,14 +316,15 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
        
          ```bash
          pipeline {
-             agent any
+             agent any # 실행할 에이전트를 지정, 'any'는 어떤 에이전트에서도 실행 가능
         
              environment {
-                 IMAGE_NAME = "devops-lab-ec2"
-                 IMAGE_TAG  = "latest"
+                 IMAGE_NAME = "devops-lab-ec2" # Docker 이미지 이름 설정
+                 IMAGE_TAG  = "latest" # Docker 이미지 태그 설정
              }
          
              stages {
+                 # Git에서 소스 코드 가져오기
                  stage('Git Checkout') {
                      steps {
                          echo "🔹 GitHub에서 코드 가져오기"
@@ -331,40 +332,43 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
                          echo "✅ Git Checkout 완료"
                      }
                  }
-        
+                 # Docker 이미지 빌드
                  stage('Build Docker Image') {
                      steps {
                          echo "🔹 Docker 이미지 빌드 시작"
                          script {
                              try {
+                                 # Dockerfile 기반으로 이미지 빌드 및 태그 추가
                                  sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
                                  echo "✅ Docker 이미지 빌드 성공"
                              } catch (err) {
                                  echo "❌ Docker 이미지 빌드 실패"
-                                 error("Build failed")
+                                 error("Build failed") # 실패 시 예외 처리
                              }
                          } 
                      }
                  }
-        
+                 # Docker 컨테이너 실행
                  stage('Run Container (Test)') {
                      steps {
                          echo "🔹 Docker 컨테이너 실행 및 테스트"
                          script {
                              try {
+                                 # 새로 빌드한 이미지를 기반으로 컨테이너 실행
                                  sh 'docker run --rm $IMAGE_NAME:$IMAGE_TAG echo "컨테이너 테스트 성공!"'
                                  echo "✅ Docker 컨테이너 테스트 성공"
                              } catch (err) {
                                  echo "❌ Docker 컨테이너 테스트 실패"
-                                 error("Test failed")
+                                 error("Test failed") # 실패 시 예외 처리
                              }
                          }
                      }
                  }
-        
+                 # Docker 이미지 정리
                  stage('Clean Up') {
                      steps {
                          echo "🔹 Docker 이미지 정리"
+                         # 빌드한 Docker 이미지 삭제
                          sh 'docker rmi $IMAGE_NAME:$IMAGE_TAG || true'
                          echo "✅ Clean up 완료"
                      }
@@ -386,11 +390,11 @@ sudo cat /var/lib/jenkins/secrets/initialAdminPassword
           # 해당 경로에 index.html 파일 내용 수정
           git status
           git add .
-          git commit -m "Push 시, Jenkins 자동 build 확인"
+          git commit -m "Push 시, Jenkins 자동 빌드 확인"
           ```
     -   푸쉬 시 Jenkins가 자동으로 빌드 수행 확인
        
-        ![Jenkins build 확인인](./images/jenkinsbuild.png)
+        ![빌드 진행 상태 확인](./images/jenkinsbuild.png)
 
 ✨ 느낀 점
 
@@ -399,3 +403,131 @@ Jenkins 설치와 초기 설정을 직접 진행하며, 빌드 자동화 환경�
 AWS에서 포트, 디스크, 메모리, 권한 등을 조정하며, 클라우드 서비스 운영에 필요한 세밀한 시스템 관리 능력을 체감할 수 있었음
 
 GitHub 연동과 Pipeline 구성으로 코드 변경 시 자동으로 빌드되는 흐름을 확인하며, CI(Continuous Integration) 역할과 중요성을 이해할 수 있었음
+
+<br><br>
+
+# Chapter 5 - Docker 자동 빌드 및 재시작 설정
+
+### 1. Jenkinsfile 수정
+
+```bash
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = "devops-lab-ec2" # Docker 이미지 이름 설정
+        IMAGE_TAG  = "latest" # Docker 이미지 태그 설정
+        CONTAINER_NAME = "my-nginx" # Docker 컨테이너 이름 설정
+        PORT = "8081" # 외부와 연결할 포트 설정
+    }
+
+    stages {
+        # Git에서 소스 코드 가져오기
+        stage('Git Checkout') {
+            steps {
+                echo "🔹 GitHub에서 코드 가져오기"
+                git branch: 'main', url: 'https://github.com/INgenious-with/devops-lab-ec2.git'
+                echo "✅ Git Checkout 완료"
+            }
+        }
+        # Docker 이미지 빌드
+        stage('Build Docker Image') {
+            steps {
+                echo "🔹 Docker 이미지 빌드 시작"
+                script {
+                    try {
+                        # Dockerfile 기반으로 이미지 빌드 및 태그 추가
+                        sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
+                        echo "✅ Docker 이미지 빌드 성공"
+                    } catch (err) {
+                        echo "❌ Docker 이미지 빌드 실패"
+                        error("Build failed") # 실패 시 예외 처리
+                    }
+                }
+            }
+        }
+        # 기존 Docker 컨테이너 중지 및 삭제
+        stage('Stop and Remove Old Container') {
+            steps {
+                echo "🔹 기존 Docker 컨테이너 중지 및 삭제"
+                script {
+                    try {
+                        # 기존 컨테이너가 실행 중이면 강제로 종료하고 삭제
+                        sh '''
+                            CONTAINER_ID=$(docker ps -q -f name=$CONTAINER_NAME)
+                            if [ ! -z "$CONTAINER_ID" ]; then
+                                echo "기존 컨테이너가 존재합니다. 중지 및 삭제합니다."
+                                docker stop $CONTAINER_NAME || true  # 실행 중인 컨테이너 종료
+                                docker rm $CONTAINER_NAME || true    # 컨테이너 삭제
+                                docker kill $CONTAINER_NAME || true  # 강제로 종료
+                            else
+                                echo "기존 컨테이너가 없습니다."
+                            fi
+                        '''
+                        echo "✅ 기존 컨테이너 중지 및 삭제 완료"
+                    } catch (err) {
+                        echo "❌ 기존 컨테이너 중지 및 삭제 실패"
+                        error("Failed to stop and remove old container") # 실패 시 예외 처리
+                    }
+                }
+            }
+        }
+        # Docker 컨테이너 실행    
+        stage('Run New Container') {
+            steps {
+                echo "🔹 새 Docker 컨테이너 실행"
+                script {
+                    try {
+                        # 새로 빌드한 이미지를 기반으로 컨테이너 실행
+                        sh 'docker run -d --name $CONTAINER_NAME -p $PORT:80 $IMAGE_NAME:$IMAGE_TAG'
+                        echo "✅ 새 Docker 컨테이너 실행 성공"
+                    } catch (err) {
+                        echo "❌ 새 Docker 컨테이너 실행 실패"
+                        error("Failed to run new container") # 실패 시 예외 처리
+                    }
+                }
+            }
+        }
+        # Docker 이미지 정리
+        stage('Clean Up') {
+            steps {
+                echo "🔹 Docker 이미지 정리"
+                # 빌드한 Docker 이미지 삭제
+                sh 'docker rmi $IMAGE_NAME:$IMAGE_TAG || true'
+                echo "✅ Clean up 완료"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "🎉 전체 빌드 성공!"
+        }
+        failure {
+            echo "⚠️ 전체 빌드 실패!"
+        }
+    }
+}
+```
+
+### 2. 빌드 결과 확인
+
+-   푸시 후 Docker 이미지가 자동으로 빌드되고, 컨테이너가 재시작되는지 확인하기
+   
+    ![푸쉬 전 Docker에서 확인한 index.html](./images/jenkinsbuild.png)
+   
+    ![Jenkins 빌드 진행 상태 확인](./images/jenkinsbuild.png)
+
+    ![푸쉬 후 Docker에서 확인한 index.html](./images/jenkinsbuild.png)
+
+✨ 느낀 점
+
+Jenkins 설치와 초기 설정을 직접 진행하며, 빌드 자동화 환경에서 발생할 수 있는 문제를 확인하고 해결하는 경험을 얻을 수 있었음
+
+AWS에서 포트, 디스크, 메모리, 권한 등을 조정하며, 클라우드 서비스 운영에 필요한 세밀한 시스템 관리 능력을 체감할 수 있었음
+
+GitHub 연동과 Pipeline 구성으로 코드 변경 시 자동으로 빌드되는 흐름을 확인하며, CI(Continuous Integration) 역할과 중요성을 이해할 수 있었음
+
+
+
+    

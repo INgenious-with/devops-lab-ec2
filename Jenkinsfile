@@ -4,7 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "devops-lab-ec2"
         IMAGE_TAG  = "latest"
-        CONTAINER_NAME = "my-nginx"  // 여전히 my-nginx라는 이름을 사용하지만, 실제로는 다른 이름이 있을 수 있음
+        CONTAINER_NAME = "my-nginx-container"  // 이름 변경
         PORT = "8081"
     }
 
@@ -37,16 +37,17 @@ pipeline {
                 echo "🔹 기존 Docker 컨테이너 중지 및 삭제"
                 script {
                     try {
-                        // 실제 컨테이너 이름을 확인하고 해당 컨테이너를 중지 및 삭제
+                        // 기존 컨테이너가 실행 중이면 강제로 종료하고 삭제
                         sh '''
-                            # 컨테이너 ID로 정확한 컨테이너 이름을 찾은 후 삭제
-                            CONTAINER_ID=$(docker ps -q -f "name=$CONTAINER_NAME")
+                            # 컨테이너가 실행 중인지 확인
+                            CONTAINER_ID=$(docker ps -q -f name=$CONTAINER_NAME)
                             if [ ! -z "$CONTAINER_ID" ]; then
-                                # 실제 컨테이너 이름을 확인
-                                CONTAINER_NAME=$(docker inspect --format '{{.Name}}' $CONTAINER_ID | sed "s/\///g")
-                                echo "기존 컨테이너 $CONTAINER_NAME 중지 및 삭제 중..."
+                                echo "기존 컨테이너가 존재합니다. 중지 및 삭제합니다."
                                 docker stop $CONTAINER_NAME || true  # 실행 중인 컨테이너 종료
-                                docker rm $CONTAINER_NAME || true  # 컨테이너 삭제
+                                docker rm $CONTAINER_NAME || true    # 컨테이너 삭제
+                                docker kill $CONTAINER_NAME || true  # 강제로 종료
+                            else
+                                echo "기존 컨테이너가 없습니다."
                             fi
                         '''
                         echo "✅ 기존 컨테이너 중지 및 삭제 완료"
@@ -63,7 +64,6 @@ pipeline {
                 echo "🔹 새 Docker 컨테이너 실행"
                 script {
                     try {
-                        // 새 컨테이너 실행
                         sh 'docker run -d --name $CONTAINER_NAME -p $PORT:80 $IMAGE_NAME:$IMAGE_TAG'
                         echo "✅ 새 Docker 컨테이너 실행 성공"
                     } catch (err) {

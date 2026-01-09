@@ -4,7 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "devops-lab-ec2"
         IMAGE_TAG  = "latest"
-        CONTAINER_NAME = "my-nginx-container"
+        CONTAINER_NAME = "my-nginx"
         PORT = "8081"
     }
 

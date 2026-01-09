@@ -39,6 +39,7 @@ pipeline {
                     try {
                         // 기존 컨테이너가 실행 중이면 강제로 종료하고 삭제
                         sh '''
+			CONTAINER_ID=$(docker ps -q -f name=$CONTAINER_NAME)
              	   	if [ $(docker ps -q -f name=$CONTAINER_NAME) ]; then
                     		docker stop $CONTAINER_NAME || true  # 컨테이너가 멈추지 않으면
                     		docker rm $CONTAINER_NAME || true  # 컨테이너가 삭제되지 않으면
@@ -59,6 +60,7 @@ pipeline {
                 echo "🔹 새 Docker 컨테이너 실행"
                 script {
                     try {
+			// 새로 빌드된 이미지를 기반으로 동일한 이름의 컨테이너를 실행
                         sh 'docker run -d --name $CONTAINER_NAME -p $PORT:80 $IMAGE_NAME:$IMAGE_TAG'
                         echo "✅ 새 Docker 컨테이너 실행 성공"
                     } catch (err) {

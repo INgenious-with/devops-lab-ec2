@@ -11,7 +11,6 @@
 ### 2. EC2 접속 및 키 페어 설정
 
 -   인스턴스 생성 시 injin-key.pem 키 페어 발급
--   키 파일은 안전한 위치에 저장
 -   인스턴스 -> 체크박스 클릭 후 연결 -> 퍼블릭 IP를 사용하여 연결
   
 ### 3. 기본 패키지 업데이트 및 시간 동기화
@@ -43,11 +42,10 @@ sudo systemctl status nginx
 
 ```bash
 ssh-keygen -t ed25519 -C "injin0318@gmail.com"
-cat ~/.ssh/id_ed25519.pub
-# 해당 값 복사
+cat ~/.ssh/id_ed25519.pub # 해당 값 복사
 ```
 -   GitHub에 SSH 키 등록
-    -   오른쪽 상단 프로필 -> Settings -> SSH and GPG keys -> New SSH key -> Title: devops-lab-ec2, Key: 위에서 복사한 값 입력
+    -   오른쪽 상단 프로필 -> Settings -> SSH and GPG keys -> New SSH key -> Title: devops-lab-ec2, Key: 위에서 복사한 값 붙여넣기
 -   Git 설치 및 초기 세팅
 
 ```bash
@@ -99,7 +97,7 @@ AWS EC2를 직접 생성하고 Nginx를 띄워보며, 클라우드에서 서버�
 ### 1. PuTTY 연결
 
 -   PEM → PPK 변환 (PuTTYgen 사용)
-    - PuTTYGen -> File -> Load private key -> injin-key.pem 열기 -> Save private key -> 안전한 위치에 저장
+    - PuTTYGen -> File -> Load private key -> injin-key.pem 열기 -> Save private key
     
         ![PuTTYGen 화면](./images/puttygen.png)
       
@@ -108,7 +106,7 @@ AWS EC2를 직접 생성하고 Nginx를 띄워보며, 클라우드에서 서버�
     
         ![Connection 화면](./images/user.png)
     
-    - SSH -> Auth -> Credentials -> Private key file for authentication: injin-ppk 불러오기
+    - SSH -> Auth -> Credentials -> Private key file for authentication: injin-key.ppk 선택
     
         ![Credentials 화면](./images/auth.png)
     
@@ -116,7 +114,7 @@ AWS EC2를 직접 생성하고 Nginx를 띄워보며, 클라우드에서 서버�
     
         ![Session 화면](./images/session.png)
     
-    - PuTTY 연결 시 devops-lab-ec2 load 해서 사용
+    - PuTTY 연결 시 Save 했던 devops-lab-ec2를 Load 해서 사용
     
         ![PuTTY 화면](./images/putty.png)
 
@@ -134,14 +132,11 @@ AWS EC2를 직접 생성하고 Nginx를 띄워보며, 클라우드에서 서버�
     
 ✨ 느낀 점
 
-PuTTY를 이용해 PEM 키를 PPK로 변환하고 세션을 등록하며,
-익숙한 SSH 접속 과정을 클라우드 환경에서도 직접 구성해볼 수 있었음
+PuTTY를 이용해 injin-key.pem 키를 injin-key.ppk 키로 변환하고 세션을 등록하며, 익숙한 SSH 접속 과정을 클라우드 환경에서도 직접 구성해볼 수 있었음
 
-또한 FileZilla를 통해 SFTP 연결을 설정하면서
-로컬 환경처럼 서버 파일을 안전하게 전송하고 관리할 수 있음을 확인함
+또한 FileZilla를 통해 SFTP 연결을 설정하면서 로컬 환경처럼 서버 파일을 안전하게 전송하고 관리할 수 있음을 확인함
 
-이번 과정을 통해 기존에 알고 있던 접근 방식이 AWS 환경에서도 동일하게 적용됨을 체험하며,
-클라우드 운영의 실제 흐름을 이해할 수 있었음
+이번 과정을 통해 기존에 알고 있던 접근 방식이 AWS 환경에서도 동일하게 적용됨을 체험하며, 클라우드 운영의 실제 흐름을 이해할 수 있었음
 
 <br><br>
 
@@ -154,7 +149,7 @@ sudo dnf install docker -y
 sudo systemctl start docker
 sudo systemctl enable docker
 sudo usermod -aG docker ec2-user
-newgrop docker
+newgrp docker
 ```
    
 ### 2. 보안그룹 포트 추가(8080)
@@ -168,7 +163,7 @@ docker run -d -p 8080:80 nginx
 docker ps
 ```
 
--   브라우저 접속: http://13.211.105.248:8080
+-   브라우저 접속: http://3.107.193.223:8080
 -   "Welcome to Nginx" 문구 확인
 
     ![Nginx 문구 확인](./images/nginxMain8080.png)
@@ -199,6 +194,8 @@ docker build -t my-nginx .
 docker run -d -p 8081:80 my-nginx
 ```
 
+-   보안그룹 포트 추가(8081)
+    -   보안그룹 -> 해당 보안그룹 클릭 -> 인바운드 규칙 편집 -> 유형: 사용자 지정 TCP, 포트 범위: 8081, CIDR 블록: 0.0.0.0/0 -> 규칙 저장    
 -   브라우저 접속: http://3.107.193.223:8081
 -   "Hello from Docker!" 문구 확인
 
@@ -222,7 +219,7 @@ sudo dnf install java-17-amazon-corretto -y
 sudo java -version # 설치 확인
 ```
 
--   Jenkins는 Java로 개발된 애플리케이션이므로, 실행을 위해서는 JDK가 선행 설치되어야 함(Amazon Linux 2023은 JDK 17 이상 필수)
+-   Jenkins는 Java로 개발된 애플리케이션으로, 실행을 위해서 JDK를 먼저 설치하여야 함(Amazon Linux 2023은 JDK 17 이상 필수)
 
 ### 2. Jenkins 설치(저장소 추가 및 서명키 등록)
 
@@ -249,7 +246,7 @@ sudo systemctl daemon-reload
 sudo systemctl start jenkins
 ```
 
--   Amazon Linux에는 기본적으로 Jenkins 패키지가 포함되어 있지 않기 때문에 Jenkins 공식 저장소(repo) 를 직접 등록해야 함
+-   Amazon Linux에는 기본적으로 Jenkins 패키지가 포함되어 있지 않아, Jenkins 공식 저장소(repo)를 직접 등록해야 함
 -   브라우저 접속: http://3.107.193.223:9090
 
     ![Jenkins 초기 화면](./images/jenkinsFirst.png)

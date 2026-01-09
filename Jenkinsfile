@@ -4,6 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "devops-lab-ec2"
         IMAGE_TAG  = "latest"
+        CONTAINER_NAME = "my-nginx"  // 새로 생성할 컨테이너 이름
         PORT = "8081"
     }
 
@@ -36,12 +37,11 @@ pipeline {
                 echo "🔹 기존 Docker 컨테이너 중지 및 삭제"
                 script {
                     try {
-                        // 기존 이미지로 실행 중인 컨테이너를 중지하고 삭제
+                        // 기존 컨테이너가 실행 중이면 강제로 종료하고 삭제
                         sh '''
-                            CONTAINER_ID=$(docker ps -q -f ancestor=$IMAGE_NAME:$IMAGE_TAG)
-                            if [ "$CONTAINER_ID" ]; then
-                                docker stop $CONTAINER_ID || true  # 실행 중인 컨테이너 종료
-                                docker rm $CONTAINER_ID || true  # 컨테이너 삭제
+                            if [ $(docker ps -q -f name=crazy_agnesi) ]; then
+                                docker stop crazy_agnesi || true  # 실행 중인 컨테이너 종료
+                                docker rm crazy_agnesi || true  # 컨테이너 삭제
                             fi
                         '''
                         echo "✅ 기존 컨테이너 중지 및 삭제 완료"
@@ -58,7 +58,8 @@ pipeline {
                 echo "🔹 새 Docker 컨테이너 실행"
                 script {
                     try {
-                        sh 'docker run -d --name my-nginx -p $PORT:80 $IMAGE_NAME:$IMAGE_TAG'
+                        // 새 컨테이너 이름을 my-nginx로 설정
+                        sh 'docker run -d --name $CONTAINER_NAME -p $PORT:80 $IMAGE_NAME:$IMAGE_TAG'
                         echo "✅ 새 Docker 컨테이너 실행 성공"
                     } catch (err) {
                         echo "❌ 새 Docker 컨테이너 실행 실패"

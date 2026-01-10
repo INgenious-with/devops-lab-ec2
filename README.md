@@ -200,7 +200,7 @@ Dockerfile을 직접 작성하며 이미지와 컨테이너의 차이를 명확�
 
 <br><br>
 
-# Chapter 4 - Jenkins 설치 및 설정
+# Chapter 4 - Jenkins 설치 및 CI/CD 파이프라인 설정
 
 ### 1. JDK(Java Development Kit) 설치
 

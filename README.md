@@ -523,6 +523,144 @@ CI/CD 파이프라인 설정을 통해 코드 변경 시 자동으로 빌드되�
 
 <br><br>
 
+# Chapter 6 - Terraform, Ansible 적용(프리티어 버전)
+
+### 1. AWS 자격 정보(Credentials) 설정
+
+-   AWS 로그인 후 우측 상단 계정 명 클릭 후, 보안 자격 증명 클릭 -> 액세스 키 만들기 -> 체크박스 클릭 후 -> 엑세스 키 만들기 -> 엑세스 키, 비밀 엑세스 키 확인 및 저장
+    -   엑세스 키는 한번만 표시되므로 반드시 복사해서 메모장 등에 안전하게 보관
+  
+```bash
+aws --version # 버전 확인
+
+aws configure # 자격 정보 설정
+순서대로 입력
+AWS Access Key ID [None]: 발급 받은 액세스 키
+AWS Secret Access Key [None]: 발급 받은 비밀 액세스 키
+Default region name [None]: ap-northeast-2(고정)
+Default output format [None]: json(고정)
+
+cat ~/.aws/credentials # 설정 확인
+```
+### 2. Terraform 설치
+
+```bash
+sudo dnf install -y unzip
+wget https://releases.hashicorp.com/terraform/1.7.3/terraform_1.7.3_linux_amd64.zip
+unzip terraform_1.7.3_linux_amd64.zip
+sudo mv terraform /usr/local/bin/
+terraform -version # 설치 확인
+
+mkdir devops-lab-terraform
+cd devops-lab-terraform # 폴더 생성 및 경로 이동
+```
+
+### 3. main.tf 파일 생성
+
+```bash
+cat <<'EOF' > main.tf
+provider "aws" {
+  region = "ap-northeast-2" # 서울 리전
+}
+
+# 프리티어 인스턴스 설정
+resource "aws_instance" "devops_ec2" {
+  ami           = "ami-00283f7a0e73c4494"  # Amazon Linux 2023 (Free Tier)
+  instance_type = "t3.micro"               # 프리티어 가능
+  key_name      = "injin-key"              # 기존 키페어 이름 (콘솔에서 발급한 것)
+
+  root_block_device {
+    volume_size = 30                       # 30GB (프리티어 30GB 이내)
+    volume_type = "gp3"
+  }
+
+  vpc_security_group_ids = [aws_security_group.devops_sg.id]
+
+  tags = {
+    Name = "devops-lab-free-tier"
+  }
+}
+
+# 필수 포트만 허용 (SSH, HTTP, HTTPS)
+
+resource "aws_security_group" "devops_sg" {
+  name        = "devops-sg"
+  description = "Allow SSH, HTTP, HTTPS"
+
+  ingress {
+    description = "Allow SSH"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Allow HTTP"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Allow HTTPS"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    description = "Allow all outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+output "public_ip" {
+  value = aws_instance.devops_ec2.public_ip
+}
+EOF
+```
+
+### 3. Terraform 초기화, 실행 전 미리보기
+
+```bash
+terraform init # 초기화
+terraform plan # 실행 전 미리보기
+```
+
+### 4. Terraform 실제 리소스 생성 및 확인
+
+```bash
+# 서울 리전에 키 페어가 없다면 아래 명령어 실행
+aws ec2 create-key-pair \
+  --key-name injin-key \
+  --query 'KeyMaterial' \
+  --output text > injin-key.pem \
+  --region ap-northeast-2
+
+chmod 400 injin-key.pem
+
+terraform apply -auto-approve # 실제 리소스 생성
+terraform output # EC2 Public IP 정보 확인
+```
+
+![terraform 리소스 생성 완료 화면](./images/terraform.png)
+
+### 5. SSH 접속 확인
+```bash
+ssh -i ~/path/to/injin-key.pem ec2-user@54.180.90.253
+```
+
+![AWS 홈페이지에서 인스턴스 생성 확인](./images/ec2.png)
+
+
+-   Jenkins는 Java로 개발된 애플리케이션으로, 실행을 위해서 JDK를 먼저 설치하여야 함(Amazon Linux 2023은 JDK 17 이상 필수)
+
 # AWS EC2와 Docker/Jenkins를 활용한 시스템 자동화 프로젝트 🖊
 
 클라우드 환경에서의 시스템 구축, 자동화, 효율적인 관리 방법을 실제로 적용하며 DevOps의 핵심 개념을 깊이 이해할 수 있었습니다.

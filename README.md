@@ -525,7 +525,20 @@ CI/CD 파이프라인 설정을 통해 코드 변경 시 자동으로 빌드되�
 
 # Chapter 6 - Terraform, Ansible 적용(프리티어 버전)
 
-### 1. AWS 자격 정보(Credentials) 설정
+### 1. Terraform 설치
+
+```bash
+sudo dnf install -y unzip
+wget https://releases.hashicorp.com/terraform/1.7.3/terraform_1.7.3_linux_amd64.zip
+unzip terraform_1.7.3_linux_amd64.zip
+sudo mv terraform /usr/local/bin/
+terraform -version # 설치 확인
+
+mkdir devops-lab-terraform
+cd devops-lab-terraform # 폴더 생성 및 경로 이동
+```
+
+### 1-2. AWS 자격 정보(Credentials) 설정
 
 -   AWS 로그인 후 우측 상단 계정 명 클릭 후, 보안 자격 증명 클릭 -> 액세스 키 만들기 -> 체크박스 클릭 후 -> 엑세스 키 만들기 -> 엑세스 키, 비밀 엑세스 키 확인 및 저장
     -   엑세스 키는 한번만 표시되므로 반드시 복사해서 메모장 등에 안전하게 보관
@@ -542,32 +555,20 @@ Default output format [None]: json(고정)
 
 cat ~/.aws/credentials # 설정 확인
 ```
-### 2. Terraform 설치
 
-```bash
-sudo dnf install -y unzip
-wget https://releases.hashicorp.com/terraform/1.7.3/terraform_1.7.3_linux_amd64.zip
-unzip terraform_1.7.3_linux_amd64.zip
-sudo mv terraform /usr/local/bin/
-terraform -version # 설치 확인
-
-mkdir devops-lab-terraform
-cd devops-lab-terraform # 폴더 생성 및 경로 이동
-```
-
-### 3. main.tf 파일 생성
+### 1-3. main.tf 파일 생성
 
 ```bash
 cat <<'EOF' > main.tf
 provider "aws" {
-  region = "ap-northeast-2" # 서울 리전
+  region = "ap-southeast-2" # 시드니 리전
 }
 
 # 프리티어 인스턴스 설정
 resource "aws_instance" "devops_ec2" {
   ami           = "ami-00283f7a0e73c4494"  # Amazon Linux 2023 (Free Tier)
   instance_type = "t3.micro"               # 프리티어 가능
-  key_name      = "injin-key"              # 기존 키페어 이름 (콘솔에서 발급한 것)
+  key_name      = "injin-key-seoul"        # 리전이 달라진 경우 새롭게 발급 받아야 함
 
   root_block_device {
     volume_size = 30                       # 30GB (프리티어 30GB 이내)
@@ -626,51 +627,245 @@ output "public_ip" {
 EOF
 ```
 
-### 3. Terraform 초기화, 실행 전 미리보기
+### 1-3. Terraform 초기화, 실행 전 미리보기
 
 ```bash
 terraform init # 초기화
 terraform plan # 실행 전 미리보기
 ```
 
-### 4. Terraform 실제 리소스 생성 및 확인
+### 1-4. Terraform 실제 리소스 생성 및 확인
 
 ```bash
-# 서울 리전에 키 페어가 없다면 아래 명령어 실행
-aws ec2 create-key-pair \
-  --key-name injin-key \
-  --query 'KeyMaterial' \
-  --output text > injin-key.pem \
-  --region ap-northeast-2
-
-chmod 400 injin-key.pem
-
 terraform apply -auto-approve # 실제 리소스 생성
 terraform output # EC2 Public IP 정보 확인
 ```
+-   terraform 리소스 생성 완료
+  
+    ![terraform 리소스 생성 완료](./images/terraform.png)
 
-![terraform 리소스 생성 완료 화면](./images/terraform.png)
+### 1-5. SSH 접속 확인
 
-### 5. SSH 접속 확인
 ```bash
-ssh -i ~/path/to/injin-key.pem ec2-user@54.180.90.253
+ssh -i ~/path/to/injin-key.pem ec2-user@54.180.103.177
+```
+-   AWS 홈페이지에서 인스턴스 생성 확인
+   
+    ![AWS 홈페이지에서 인스턴스 생성 확인](./images/ec2.png)
+
+### 2. Ansible 설치
+```bash
+sudo dnf install ansible -y
+ansible --version # 버전 확인
+
+mkdir devops-lab-ansible
+cd devops-lab-terraform # 폴더 생성 및 경로 이동
 ```
 
-![AWS 홈페이지에서 인스턴스 생성 확인](./images/ec2.png)
+### 2-2. 인벤토리 파일 생성 및 키 업로드
 
+-   서울 리전에서 새롭게 terraform을 생성하였다면, 새로운 키 페어 발급 필요
+    -   AWS 콘솔 -> EC2 -> 키 페어 -> 키 페어 생성 -> injin-key-seoul
+```bash
+vi inventory.ini
 
--   Jenkins는 Java로 개발된 애플리케이션으로, 실행을 위해서 JDK를 먼저 설치하여야 함(Amazon Linux 2023은 JDK 17 이상 필수)
+[devops_ec2]
+54.180.103.177 ansible_user=ec2-user ansible_private_key_file=~/injin-key-seoul.pem
+:wq!
+
+Filezilla를 이용하여 home/ec2/user/ 경로에 inkin-key-seoul.pem 업로드
+chmod 600 ~/injin-key-seoul.pem # 업로드 후 권한 설정(Ansible은 반드시 600 권한에서만 SSH 연결 가능)
+```
+
+### 2-3. Ansible 연결 확인
+
+```bash
+ansible all -i inventory.ini -m ping
+```
+
+-   Ansible 연결 확인
+   
+    ![Ansible 연결 확인](./images/ansible.png)
+
+### 2-4. Nginx 설치 플레이북 작성
+```bash
+vi nginx.yml
+
+---
+- name: Setup Nginx on EC2
+  hosts: devops_ec2
+  become: yes
+
+  tasks:
+    - name: Update all packages
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+
+    - name: Install Nginx
+      ansible.builtin.dnf:
+        name: nginx
+        state: present
+
+    - name: Enable and start Nginx service
+      ansible.builtin.service:
+        name: nginx
+        enabled: yes
+        state: started
+:wq!
+
+ansible-playbook -i inventory.ini nginx.yml # 플레이북 실행(서버에서 어떤 일을 자동으로 할지 적어둔 스크립트)
+```
+
+-   브라우저에서 확인
+   
+    ![브라우저에서 확인](./images/playbook.png)
+    
+### 2-5. 보안그룹 포트 추가(9990)
+
+-   보안그룹 -> 해당 보안그룹 클릭 -> 인바운드 규칙 편집 -> 유형: 사용자 지정 TCP, 포트 범위: 9990, CIDR 블록: 0.0.0.0/0 -> 규칙 저장
+     
+### 2-6. Nginx 설치 플레이북 작성(jenkins, Docker CI/CD 배포 파이프 라인 자동화)
+
+```bash
+cat <<'EOF' > site.yml
+---
+- name: Setup Nginx, Docker and Jenkins on EC2
+  hosts: devops_ec2
+  become: yes
+  vars:
+    jenkins_repo_url: "https://pkg.jenkins.io/redhat/jenkins.repo"
+    jenkins_key_url: "https://pkg.jenkins.io/redhat/jenkins.io.key"
+
+  tasks:
+    - name: Ensure /etc/ansible exists (marker dir)
+      ansible.builtin.file:
+        path: /etc/ansible
+        state: directory
+        mode: '0755'
+
+    - name: Update all packages (safe upgrade)
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+      register: update_result
+      retries: 1
+      delay: 1
+
+    - name: Install common packages (docker, git)
+      ansible.builtin.dnf:
+        name:
+          - docker
+          - git
+        state: present
+
+    - name: Enable and start docker
+      ansible.builtin.systemd:
+        name: docker
+        enabled: yes
+        state: started
+
+    - name: Ensure docker group exists
+      ansible.builtin.group:
+        name: docker
+        state: present
+
+    - name: Add ec2-user to docker group
+      ansible.builtin.user:
+        name: ec2-user
+        groups: docker
+        append: yes
+
+    # --- Jenkins repo/key import ---
+    - name: Download Jenkins repo file
+      ansible.builtin.get_url:
+        url: "{{ jenkins_repo_url }}"
+        dest: /etc/yum.repos.d/jenkins.repo
+        mode: '0644'
+        owner: root
+        group: root
+
+    - name: Import Jenkins GPG key (idempotent via marker)
+      ansible.builtin.shell: |
+        rpm --import "{{ jenkins_key_url }}" && touch /etc/ansible/.jenkins_key_imported
+      args:
+        creates: /etc/ansible/.jenkins_key_imported
+
+    - name: Clean dnf cache
+      ansible.builtin.shell: dnf clean all
+      changed_when: false
+
+    - name: Install OpenJDK 17 (required by Jenkins)
+      ansible.builtin.dnf:
+        name: java-17-amazon-corretto
+        state: present
+
+    - name: Install Jenkins package
+      ansible.builtin.dnf:
+        name: jenkins
+        state: present
+      register: jenkins_install
+
+    - name: Ensure jenkins user is in docker group (so jenkins can run docker)
+      ansible.builtin.user:
+        name: jenkins
+        groups: docker
+        append: yes
+      when: jenkins_install is succeeded or jenkins_install is changed
+
+    - name: Enable and start Jenkins service
+      ansible.builtin.systemd:
+        name: jenkins
+        enabled: yes
+        state: started
+      register: jenkins_service
+
+    - name: Wait for Jenkins port 9990 to be open
+      ansible.builtin.wait_for:
+        host: "{{ inventory_hostname }}"
+        port: 9990
+        delay: 2
+        timeout: 120
+        state: started
+
+    - name: Show status summary
+      ansible.builtin.debug:
+        msg:
+          - "docker_service_started: ok"
+          - "jenkins_installed: {{ (jenkins_install is changed) or (jenkins_install is succeeded) }}"
+          - "jenkins_service_state: {{ jenkins_service.state if jenkins_service is defined else 'unknown' }}"
+EOF
+
+ansible-playbook --syntax-check -i inventory.ini site.yml # YAML 문법 검사
+ansible-playbook -i inventory.ini site.yml # 플레이북 실행
+```
+
+### 2-6. Docker 자동 빌드 및 재시작 설정은 Chapter 5에서 다뤘으므로 생략
+
+✨ 느낀 점
+
+Terraform으로 EC2 인프라를 자동 생성하고, Ansible을 통해 Nginx, Docker, Jenkins 설치와 서비스 구동을 자동화하였음
+
+이 과정을 통해 코드 기반 인프라 관리(IaC)와 서버 구성 자동화가 완전히 연동된 CI/CD 환경을 구축할 수 있었음
+
+<br><br>
 
 # AWS EC2와 Docker/Jenkins를 활용한 시스템 자동화 프로젝트 🖊
 
 클라우드 환경에서의 시스템 구축, 자동화, 효율적인 관리 방법을 실제로 적용하며 DevOps의 핵심 개념을 깊이 이해할 수 있었습니다.
 
-와이드큐브에서 쌓은 실무 경험을 통해, 클라우드 환경에서 DevOps 기술을 확장할 수 있는 중요한 방향성을 파악하게 되었습니다.
+와이드큐브에서 쌓은 실무 경험을 기반으로, 클라우드 환경에서 인프라부터 애플리케이션 레벨까지 자동화하는 DevOps 기술의 확장 방향성을 구체적으로 파악하게 되었습니다.
 
-AWS EC2 환경 구축부터 Nginx 설치, GitHub와의 연동, Docker와 Jenkins를 활용한 자동화 파이프라인 설정까지, 클라우드 환경에서 시스템 구축과 관리에 필요한 핵심 기술을 익혔습니다.
+이번 프로젝트에서는 AWS EC2 환경을 Terraform으로 자동 구축하고, Ansible을 활용해 서버 설정과 애플리케이션 배포를 자동화하였습니다.
 
-특히, Docker와 Jenkins를 활용한 자동화된 빌드, 배포 및 환경 구축 과정이 인상 깊었으며, 실무에서 이를 어떻게 활용할 수 있을지에 대한 이해가 깊어졌습니다.
+또한 Nginx 설치, GitHub 연동, Docker와 Jenkins를 활용한 CI/CD 파이프라인 구성을 통해 클라우드 환경에서 시스템을 코드로 정의하고, 반복 가능한 형태로 관리하는 과정을 경험했습니다.
 
-이번 개인 프로젝트를 통해 클라우드 환경과 자동화 도구를 효과적으로 활용하는 실무 능력을 쌓을 수 있었고, 이 경험은 클라우드 환경에서 필요한 역량을 갖추는데 중요한 밑거름이 되었습니다.
+특히 Terraform으로 인프라를 코드로 관리(IaC)하고, Ansible로 서버 구성을 자동화하는 과정은 클라우드 운영의 효율성과 확장성을 체감할 수 있었던 부분이었습니다.
+
+이를 통해 Docker와 Jenkins 기반의 자동 빌드·배포 환경이 어떻게 실제 서비스 운영 속도와 품질을 높이는지를 직접 확인할 수 있었습니다.
+
+이번 개인 프로젝트를 통해 클라우드 환경에서 Terraform, Ansible, Docker, Jenkins를 유기적으로 연결해 자동화된 환경을 구축하는 실무 능력을 쌓을 수 있었으며,
+
+이 경험은 향후 클라우드 기반 인프라 운영과 DevOps 문화 정착에 큰 밑거름이 될 것이라 생각합니다.
 
 <br><br>

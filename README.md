@@ -561,14 +561,14 @@ cat ~/.aws/credentials # 설정 확인
 ```bash
 cat <<'EOF' > main.tf
 provider "aws" {
-  region = "ap-southeast-2" # 시드니 리전
+  region = "ap-southeast-2"
 }
 
 # 프리티어 인스턴스 설정
 resource "aws_instance" "devops_ec2" {
   ami           = "ami-00283f7a0e73c4494"  # Amazon Linux 2023 (Free Tier)
   instance_type = "t3.micro"               # 프리티어 가능
-  key_name      = "injin-key-seoul"        # 리전이 달라진 경우 새롭게 발급 받아야 함
+  key_name      = "injin-key"        # 리전이 달라진 경우 새롭게 발급 받아야 함
 
   root_block_device {
     volume_size = 30                       # 30GB (프리티어 30GB 이내)
@@ -664,17 +664,15 @@ cd devops-lab-terraform # 폴더 생성 및 경로 이동
 
 ### 2-2. 인벤토리 파일 생성 및 키 업로드
 
--   서울 리전에서 새롭게 terraform을 생성하였다면, 새로운 키 페어 발급 필요
-    -   AWS 콘솔 -> EC2 -> 키 페어 -> 키 페어 생성 -> injin-key-seoul
 ```bash
 vi inventory.ini
 
 [devops_ec2]
-54.180.103.177 ansible_user=ec2-user ansible_private_key_file=~/injin-key-seoul.pem
+54.180.103.177 ansible_user=ec2-user ansible_private_key_file=~/injin-key.pem
 :wq!
 
-Filezilla를 이용하여 home/ec2/user/ 경로에 inkin-key-seoul.pem 업로드
-chmod 600 ~/injin-key-seoul.pem # 업로드 후 권한 설정(Ansible은 반드시 600 권한에서만 SSH 연결 가능)
+Filezilla를 이용하여 home/ec2/user/ 경로에 inkin-key.pem 업로드
+chmod 600 ~/injin-key.pem # 업로드 후 권한 설정(Ansible은 반드시 600 권한에서만 SSH 연결 가능)
 ```
 
 ### 2-3. Ansible 연결 확인

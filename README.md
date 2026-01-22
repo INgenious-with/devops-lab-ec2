@@ -647,7 +647,7 @@ terraform output # EC2 Public IP 정보 확인
 ### 1-5. SSH 접속 확인
 
 ```bash
-ssh -i ~/path/to/injin-key.pem ec2-user@54.180.103.177
+ssh -i ~/path/to/injin-key.pem ec2-user@54.180.90.253
 ```
 -   AWS 홈페이지에서 인스턴스 생성 확인
    
@@ -659,7 +659,7 @@ sudo dnf install ansible -y
 ansible --version # 버전 확인
 
 mkdir devops-lab-ansible
-cd devops-lab-terraform # 폴더 생성 및 경로 이동
+cd devops-lab-ansible # 폴더 생성 및 경로 이동
 ```
 
 ### 2-2. 인벤토리 파일 생성 및 키 업로드
